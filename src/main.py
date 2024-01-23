@@ -9,6 +9,7 @@ from colorama import (
 )
 
 from douzero.env.game import GameEnv
+from douzero.env.game import InfoSet
 from douzero.env.game import bombs
 from douzero.evaluation.deep_agent import DeepAgent
 from douzero.evaluation import simulation as sim
@@ -41,13 +42,17 @@ def render_action(action):
     cards = [EnvCard2RealCard[a] for a in action]
     return "".join(cards)
 
+
 def paste_action(string):
     action = []
+    if string in {'n', 'pass'}:
+        return action
     for ch in string:
         if ch not in RealCard2EnvCard:
             return None
         action.append(RealCard2EnvCard[ch])
     return action
+
 
 def generate_data():
     deck = AllEnvCard.copy()
@@ -101,6 +106,21 @@ class MyEnv(GameEnv):
         return action
 
 
+def input_action(infoset):
+    while True:
+        info = f"{Fore.RED}{render_action(infoset.player_hand_cards)} {Style.RESET_ALL}"
+        print(info)
+        action = paste_action(input("INPUT: "))
+        if action is None:
+            continue
+        if not action:
+            return action
+        for a in infoset.legal_actions:
+            if tuple(a) == tuple(action):
+                return action
+        continue
+
+
 def play():
     # 输入玩家的牌
     data = generate_data()
@@ -115,11 +135,9 @@ def play():
     colors = [Fore.GREEN, Fore.RED, Fore.MAGENTA]
 
     while not env.game_over:
-        info = f"{Fore.GREEN}{render_action(env.info_sets['landlord_up'].player_hand_cards)} " \
-            f"{Fore.RED}{render_action(env.info_sets['landlord'].player_hand_cards)} " \
-            f"{Fore.MAGENTA}{render_action(env.info_sets['landlord_down'].player_hand_cards)} {Style.RESET_ALL}"
-        print(info)
         action = None
+        if idx % 3 == 1:
+            action = input_action(env.info_sets['landlord'])
 
         action = env.step(action)
         action = render_action(action)
@@ -129,8 +147,8 @@ def play():
         idx += 1
 
     info = f"{Fore.GREEN}{render_action(env.info_sets['landlord_up'].player_hand_cards)} " \
-            f"{Fore.RED}{render_action(env.info_sets['landlord'].player_hand_cards)} " \
-            f"{Fore.MAGENTA}{render_action(env.info_sets['landlord_down'].player_hand_cards)} {Style.RESET_ALL}"
+        f"{Fore.RED}{render_action(env.info_sets['landlord'].player_hand_cards)} " \
+        f"{Fore.MAGENTA}{render_action(env.info_sets['landlord_down'].player_hand_cards)} {Style.RESET_ALL}"
     print(info)
 
     env.reset()
