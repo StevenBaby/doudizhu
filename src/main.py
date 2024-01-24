@@ -106,16 +106,20 @@ class MyEnv(GameEnv):
         return action
 
 
-def input_action(infoset):
+def input_action(info_sets):
+    if len(info_sets['landlord'].legal_actions) == 1:
+        return info_sets['landlord'].legal_actions[0]
     while True:
-        info = f"{Fore.RED}{render_action(infoset.player_hand_cards)} {Style.RESET_ALL}"
+        info = f"{Fore.GREEN}{len(info_sets['landlord_up'].player_hand_cards)} " \
+        f"{Fore.RED}{render_action(info_sets['landlord'].player_hand_cards)} " \
+        f"{Fore.MAGENTA}{len(info_sets['landlord_down'].player_hand_cards)} {Style.RESET_ALL}"
         print(info)
         action = paste_action(input("INPUT: "))
         if action is None:
             continue
         if not action:
             return action
-        for a in infoset.legal_actions:
+        for a in info_sets['landlord'].legal_actions:
             if tuple(a) == tuple(action):
                 return action
         continue
@@ -137,7 +141,7 @@ def play():
     while not env.game_over:
         action = None
         if idx % 3 == 1:
-            action = input_action(env.info_sets['landlord'])
+            action = input_action(env.info_sets)
 
         action = env.step(action)
         action = render_action(action)
